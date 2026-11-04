@@ -1,0 +1,21 @@
+CompileFlags:
+  CompilationDatabase: build/default
+  Add: [-std=c++23]
+
+Diagnostics:
+  # Uses the repository's .clang-tidy checks.
+  ClangTidy:
+    FastCheckFilter: Loose
+  UnusedIncludes: Strict
+
+Index:
+  Background: Build
+  StandardLibrary: Yes
+
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+
+Hover:
+  ShowAKA: Yes

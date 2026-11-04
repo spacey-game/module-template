@@ -1,0 +1,51 @@
+name: Coverage Badge
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install gcovr
+        run: python -m pip install gcovr
+
+      - name: Configure coverage preset
+        run: cmake --preset coverage
+
+      - name: Build, test, and measure coverage
+        run: cmake --build --preset coverage --parallel
+
+      - name: Generate badge
+        run: >-
+          python .github/scripts/generate_coverage_badge.py
+          build/coverage/coverage/summary.json coverage.svg
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/coverage/coverage/
+
+      - name: Commit updated badge
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add coverage.svg
+          if ! git diff --cached --quiet; then
+            git commit -m "Update coverage badge"
+            git push
+          fi

@@ -1,0 +1,13 @@
+{
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "clangd.arguments": [
+    "--background-index"
+  ],
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "modificationsIfAvailable",
+  "cmake.buildPreset": "default",
+  "cmake.configureOnOpen": true,
+  "cmake.configurePreset": "default",
+  "cmake.testPreset": "default",
+  "cmake.useCMakePresets": "always"
+}

@@ -1,0 +1,64 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "MODULE_NAME": "engine_module",
+        "BUILD_TESTING": "ON",
+        "ENGINE_MODULE_BUILD_TESTS": "ON",
+        "ENGINE_MODULE_BUILD_EXAMPLES": "ON",
+        "ENGINE_MODULE_ENABLE_COVERAGE": "OFF"
+      }
+    },
+    {
+      "name": "coverage",
+      "displayName": "Coverage",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/coverage",
+      "cacheVariables": {
+        "ENGINE_MODULE_BUILD_EXAMPLES": "OFF",
+        "ENGINE_MODULE_ENABLE_COVERAGE": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default"
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage",
+      "targets": [
+        "engine_module_coverage"
+      ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
