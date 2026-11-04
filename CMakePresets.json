@@ -17,7 +17,6 @@
         "MODULE_NAME": "engine_module",
         "BUILD_TESTING": "ON",
         "ENGINE_MODULE_BUILD_TESTS": "ON",
-        "ENGINE_MODULE_BUILD_EXAMPLES": "ON",
         "ENGINE_MODULE_ENABLE_COVERAGE": "OFF"
       }
     },
@@ -27,7 +26,6 @@
       "inherits": "default",
       "binaryDir": "${sourceDir}/build/coverage",
       "cacheVariables": {
-        "ENGINE_MODULE_BUILD_EXAMPLES": "OFF",
         "ENGINE_MODULE_ENABLE_COVERAGE": "ON"
       }
     }
