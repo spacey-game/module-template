@@ -17,10 +17,10 @@ string(MAKE_C_IDENTIFIER "${PROJECT_NAME}" MODULE_OPTION_PREFIX)
 string(TOUPPER "${MODULE_OPTION_PREFIX}" MODULE_OPTION_PREFIX)
 
 option(${MODULE_OPTION_PREFIX}_BUILD_TESTS "Build ${PROJECT_NAME} tests" ON)
-option(${MODULE_OPTION_PREFIX}_BUILD_EXAMPLES "Build ${PROJECT_NAME} examples" ON)
 option(${MODULE_OPTION_PREFIX}_ENABLE_COVERAGE "Enable ${PROJECT_NAME} coverage instrumentation" OFF)
 
-add_library(${PROJECT_NAME} src/module.cpp)
+file(GLOB_RECURSE MODULE_SOURCES src/*.cpp)
+add_library(${PROJECT_NAME} ${MODULE_SOURCES})
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 target_include_directories(${PROJECT_NAME}
@@ -55,12 +55,7 @@ if(${MODULE_OPTION_PREFIX}_BUILD_TESTS AND BUILD_TESTING)
             GTest::gtest_main
     )
     include(GoogleTest)
-    gtest_discover_tests(${PROJECT_NAME}_tests TEST_PREFIX "${PROJECT_NAME}.")
-endif()
-
-if(${MODULE_OPTION_PREFIX}_BUILD_EXAMPLES)
-    add_executable(${PROJECT_NAME}_example examples/basic.cpp)
-    target_link_libraries(${PROJECT_NAME}_example PRIVATE ${PROJECT_NAME}::${PROJECT_NAME})
+    gtest_discover_tests(${PROJECT_NAME}_tests)
 endif()
 
 if(${MODULE_OPTION_PREFIX}_ENABLE_COVERAGE)
@@ -76,10 +71,6 @@ if(${MODULE_OPTION_PREFIX}_ENABLE_COVERAGE)
     target_link_options(${PROJECT_NAME} PUBLIC --coverage)
     target_compile_options(${PROJECT_NAME}_tests PRIVATE --coverage -O0 -g)
     target_link_options(${PROJECT_NAME}_tests PRIVATE --coverage)
-    if(TARGET ${PROJECT_NAME}_example)
-        target_compile_options(${PROJECT_NAME}_example PRIVATE --coverage -O0 -g)
-        target_link_options(${PROJECT_NAME}_example PRIVATE --coverage)
-    endif()
 
     add_custom_target(${PROJECT_NAME}_coverage
         COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${PROJECT_BINARY_DIR} --output-on-failure
