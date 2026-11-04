@@ -16,7 +16,7 @@ string(TOUPPER "${MODULE_OPTION_PREFIX}" MODULE_OPTION_PREFIX)
 option(BUILD_TESTS "Build ${PROJECT_NAME} tests" ON)
 option(ENABLE_COVERAGE "Enable ${PROJECT_NAME} coverage instrumentation" OFF)
 
-file(GLOB_RECURSE MODULE_SOURCES src/*.cpp)
+file(GLOB_RECURSE MODULE_SOURCES CONFIGURE_DEPENDS src/*.cpp)
 add_library(${PROJECT_NAME} ${MODULE_SOURCES})
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
@@ -45,7 +45,8 @@ if(BUILD_TESTS)
         FetchContent_MakeAvailable(googletest)
     endif()
 
-    add_executable(${PROJECT_NAME}_tests tests/module_test.cpp)
+    file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS tests/*.cpp)
+    add_executable(${PROJECT_NAME}_tests ${TEST_SOURCES})
     target_link_libraries(${PROJECT_NAME}_tests
         PRIVATE
             ${PROJECT_NAME}::${PROJECT_NAME}

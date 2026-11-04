@@ -7,13 +7,14 @@
   },
   "configurePresets": [
     {
-      "name": "all",
-      "displayName": "All",
+      "name": "default",
+      "displayName": "Default",
       "description": "Configure the project with the default library build and tests enabled.",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/all",
+      "binaryDir": "${sourceDir}/build/default",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "BUILD_TESTS": "ON",
         "ENABLE_COVERAGE": "OFF"
       }
@@ -22,7 +23,7 @@
       "name": "tests",
       "displayName": "Tests",
       "description": "Configure the project with tests enabled for ctest.",
-      "inherits": "all",
+      "inherits": "default",
       "binaryDir": "${sourceDir}/build/tests",
       "cacheVariables": {
         "BUILD_TESTS": "ON",
@@ -39,19 +40,12 @@
         "BUILD_TESTS": "ON",
         "ENABLE_COVERAGE": "ON"
       }
-    },
-    {
-      "name": "default",
-      "displayName": "Default",
-      "description": "Backward-compatible default preset used by the repository workflows.",
-      "inherits": "all",
-      "binaryDir": "${sourceDir}/build/default"
     }
   ],
   "buildPresets": [
     {
-      "name": "all",
-      "configurePreset": "all"
+      "name": "default",
+      "configurePreset": "default"
     },
     {
       "name": "tests",
@@ -63,16 +57,12 @@
       "targets": [
         "engine_module_coverage"
       ]
-    },
-    {
-      "name": "default",
-      "configurePreset": "default"
     }
   ],
   "testPresets": [
     {
-      "name": "all",
-      "configurePreset": "all",
+      "name": "default",
+      "configurePreset": "default",
       "output": {
         "outputOnFailure": true
       }
@@ -87,13 +77,6 @@
     {
       "name": "coverage",
       "configurePreset": "coverage",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "default",
-      "configurePreset": "default",
       "output": {
         "outputOnFailure": true
       }
