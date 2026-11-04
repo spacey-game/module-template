@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "cmakeMinimumRequired": {
     "major": 3,
     "minor": 20,
@@ -7,33 +7,55 @@
   },
   "configurePresets": [
     {
-      "name": "default",
-      "displayName": "Default",
+      "name": "all",
+      "displayName": "All",
+      "description": "Configure the project with the default library build and tests enabled.",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/default",
+      "binaryDir": "${sourceDir}/build/all",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "MODULE_NAME": "engine_module",
-        "BUILD_TESTING": "ON",
-        "ENGINE_MODULE_BUILD_TESTS": "ON",
-        "ENGINE_MODULE_ENABLE_COVERAGE": "OFF"
+        "BUILD_TESTS": "ON",
+        "ENABLE_COVERAGE": "OFF"
+      }
+    },
+    {
+      "name": "tests",
+      "displayName": "Tests",
+      "description": "Configure the project with tests enabled for ctest.",
+      "inherits": "all",
+      "binaryDir": "${sourceDir}/build/tests",
+      "cacheVariables": {
+        "BUILD_TESTS": "ON",
+        "ENABLE_COVERAGE": "OFF"
       }
     },
     {
       "name": "coverage",
       "displayName": "Coverage",
-      "inherits": "default",
+      "description": "Configure the project with coverage instrumentation enabled.",
+      "inherits": "tests",
       "binaryDir": "${sourceDir}/build/coverage",
       "cacheVariables": {
-        "ENGINE_MODULE_ENABLE_COVERAGE": "ON"
+        "BUILD_TESTS": "ON",
+        "ENABLE_COVERAGE": "ON"
       }
+    },
+    {
+      "name": "default",
+      "displayName": "Default",
+      "description": "Backward-compatible default preset used by the repository workflows.",
+      "inherits": "all",
+      "binaryDir": "${sourceDir}/build/default"
     }
   ],
   "buildPresets": [
     {
-      "name": "default",
-      "configurePreset": "default"
+      "name": "all",
+      "configurePreset": "all"
+    },
+    {
+      "name": "tests",
+      "configurePreset": "tests"
     },
     {
       "name": "coverage",
@@ -41,12 +63,23 @@
       "targets": [
         "engine_module_coverage"
       ]
+    },
+    {
+      "name": "default",
+      "configurePreset": "default"
     }
   ],
   "testPresets": [
     {
-      "name": "default",
-      "configurePreset": "default",
+      "name": "all",
+      "configurePreset": "all",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "tests",
+      "configurePreset": "tests",
       "output": {
         "outputOnFailure": true
       }
@@ -54,6 +87,13 @@
     {
       "name": "coverage",
       "configurePreset": "coverage",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "default",
+      "configurePreset": "default",
       "output": {
         "outputOnFailure": true
       }

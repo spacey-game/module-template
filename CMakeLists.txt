@@ -1,10 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    set(MODULE_NAME "engine_module" CACHE STRING "Project and library target name")
-else()
-    get_filename_component(MODULE_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-endif()
+set(MODULE_NAME "engine_module" CACHE STRING "Project and library target name")
+
 project(${MODULE_NAME} VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -16,8 +13,8 @@ endif()
 string(MAKE_C_IDENTIFIER "${PROJECT_NAME}" MODULE_OPTION_PREFIX)
 string(TOUPPER "${MODULE_OPTION_PREFIX}" MODULE_OPTION_PREFIX)
 
-option(${MODULE_OPTION_PREFIX}_BUILD_TESTS "Build ${PROJECT_NAME} tests" ON)
-option(${MODULE_OPTION_PREFIX}_ENABLE_COVERAGE "Enable ${PROJECT_NAME} coverage instrumentation" OFF)
+option(BUILD_TESTS "Build ${PROJECT_NAME} tests" ON)
+option(ENABLE_COVERAGE "Enable ${PROJECT_NAME} coverage instrumentation" OFF)
 
 file(GLOB_RECURSE MODULE_SOURCES src/*.cpp)
 add_library(${PROJECT_NAME} ${MODULE_SOURCES})
@@ -29,7 +26,7 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:include>
 )
 
-if(${MODULE_OPTION_PREFIX}_BUILD_TESTS AND BUILD_TESTING)
+if(BUILD_TESTS)
     enable_testing()
     if(NOT TARGET GTest::gtest_main)
         find_package(GTest QUIET)
@@ -58,33 +55,62 @@ if(${MODULE_OPTION_PREFIX}_BUILD_TESTS AND BUILD_TESTING)
     gtest_discover_tests(${PROJECT_NAME}_tests)
 endif()
 
-if(${MODULE_OPTION_PREFIX}_ENABLE_COVERAGE)
-    if(NOT ${MODULE_OPTION_PREFIX}_BUILD_TESTS OR NOT BUILD_TESTING)
-        message(FATAL_ERROR "Coverage reporting requires ${MODULE_OPTION_PREFIX}_BUILD_TESTS=ON and BUILD_TESTING=ON")
+if(ENABLE_COVERAGE)
+    if(NOT BUILD_TESTS)
+        message(FATAL_ERROR "Coverage reporting requires BUILD_TESTS=ON")
     endif()
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         message(FATAL_ERROR "Coverage instrumentation is supported with GCC or Clang")
     endif()
 
-    find_program(GCOVR_EXECUTABLE gcovr REQUIRED)
+    find_program(GCOVR_EXECUTABLE gcovr)
+    set(GCOVR_COMMAND)
+    if(GCOVR_EXECUTABLE)
+        set(GCOVR_COMMAND ${GCOVR_EXECUTABLE})
+    else()
+        find_package(Python3 COMPONENTS Interpreter QUIET)
+        if(Python3_Interpreter_FOUND)
+            execute_process(
+                COMMAND ${Python3_EXECUTABLE} -m gcovr --version
+                RESULT_VARIABLE GCOVR_PYTHON_RESULT
+                OUTPUT_QUIET
+                ERROR_QUIET
+            )
+            if(GCOVR_PYTHON_RESULT EQUAL 0)
+                set(GCOVR_COMMAND ${Python3_EXECUTABLE} -m gcovr)
+            endif()
+        endif()
+    endif()
     target_compile_options(${PROJECT_NAME} PRIVATE --coverage -O0 -g)
     target_link_options(${PROJECT_NAME} PUBLIC --coverage)
     target_compile_options(${PROJECT_NAME}_tests PRIVATE --coverage -O0 -g)
     target_link_options(${PROJECT_NAME}_tests PRIVATE --coverage)
 
-    add_custom_target(${PROJECT_NAME}_coverage
-        COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${PROJECT_BINARY_DIR} --output-on-failure
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/coverage
-        COMMAND ${GCOVR_EXECUTABLE}
-            --root ${PROJECT_SOURCE_DIR}
-            --object-directory ${PROJECT_BINARY_DIR}
-            --filter ${PROJECT_SOURCE_DIR}/src/
-            --html-details ${PROJECT_BINARY_DIR}/coverage/index.html
-            --json-summary ${PROJECT_BINARY_DIR}/coverage/summary.json
-            --print-summary
-        DEPENDS ${PROJECT_NAME}_tests
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-        COMMENT "Running ${PROJECT_NAME} tests and generating the HTML coverage report"
-        VERBATIM
-    )
+    if(GCOVR_COMMAND)
+        add_custom_target(${PROJECT_NAME}_coverage
+            COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${PROJECT_BINARY_DIR} --output-on-failure
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/coverage
+            COMMAND ${GCOVR_COMMAND}
+                --root ${PROJECT_SOURCE_DIR}
+                --object-directory ${PROJECT_BINARY_DIR}
+                --filter ${PROJECT_SOURCE_DIR}/src/
+                --html-details ${PROJECT_BINARY_DIR}/coverage/index.html
+                --json-summary ${PROJECT_BINARY_DIR}/coverage/summary.json
+                --print-summary
+            DEPENDS ${PROJECT_NAME}_tests
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+            COMMENT "Running ${PROJECT_NAME} tests and generating the HTML coverage report"
+            VERBATIM
+        )
+    else()
+        message(STATUS "gcovr was not found. '${PROJECT_NAME}_coverage' will fail until gcovr is installed (for example: python3 -m pip install gcovr).")
+        add_custom_target(${PROJECT_NAME}_coverage
+            COMMAND ${CMAKE_COMMAND} -E echo "gcovr is required to build ${PROJECT_NAME}_coverage. Install it and re-run the build."
+            COMMAND ${CMAKE_COMMAND} -E false
+            DEPENDS ${PROJECT_NAME}_tests
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+            COMMENT "Coverage tool missing"
+            VERBATIM
+        )
+    endif()
 endif()

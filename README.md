@@ -63,6 +63,10 @@ cmake --preset coverage
 cmake --build --preset coverage --parallel
 ```
 
+If `gcovr` is not installed, `cmake --preset coverage` still configures so the
+project can be opened in IDEs, and the `engine_module_coverage` build target
+fails with an explicit install hint.
+
 The target runs CTest and writes an HTML report to
 `build/coverage/coverage/index.html`, plus a JSON summary. Coverage is supported
 with GCC and Clang. GitHub Actions runs tests on Linux and Windows, and validates
