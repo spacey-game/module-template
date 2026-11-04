@@ -43,6 +43,53 @@ all modules are discoverable from the root build directory. `BUILD_TESTING=OFF`
 disables tests across the entire engine; a module-prefixed option disables
 tests only for that module.
 
+## Adding dependencies
+
+The template includes a small helper for adding dependencies either from a local
+subdirectory or from a remote repository via `FetchContent`:
+
+```cmake
+set(fmt_VERSION "11.2.1" CACHE STRING "fmt version")
+module_add_dependency(fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+)
+
+module_add_dependency(my_lib
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/my_lib
+)
+
+target_link_libraries(${PROJECT_NAME}
+    PUBLIC
+        fmt::fmt
+        my_lib::my_lib
+)
+```
+
+Use `PACKAGE` when the dependency is available via `find_package` instead of a
+source checkout:
+
+```cmake
+set(glm_VERSION "1.0" CACHE STRING "glm minimum version")
+module_add_dependency(glm PACKAGE glm REQUIRED)
+```
+
+This keeps the project easy to extend when one dependency is vendored in a
+subfolder and another is pulled in automatically from GitHub.
+
+Each dependency gets a cache variable named `<dependency>_VERSION` (for example
+`fmt_VERSION` or `googletest_VERSION`). For fetched dependencies this value is
+used as `GIT_TAG`, and for package dependencies it is used as the
+`find_package` version argument. You can override these from presets or the CLI:
+
+```sh
+cmake --preset default -Dfmt_VERSION=11.2.2 -Dgoogletest_VERSION=v1.18.1
+```
+
+When multiple modules use the same dependency, the first one that provides the
+target (or fetch declaration) wins and later modules reuse it. To centralize
+versions, set the `*_VERSION` variables in the top-level engine CMake project
+before calling `add_subdirectory` on modules.
+
 ## VS Code
 
 The workspace recommends CMake Tools and clangd. The `.vscode` settings disable

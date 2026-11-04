@@ -13,6 +13,63 @@ endif()
 string(MAKE_C_IDENTIFIER "${PROJECT_NAME}" MODULE_OPTION_PREFIX)
 string(TOUPPER "${MODULE_OPTION_PREFIX}" MODULE_OPTION_PREFIX)
 
+if(NOT COMMAND module_add_dependency)
+    function(module_add_dependency DEP_NAME)
+        set(options REQUIRED GIT_SHALLOW)
+        set(oneValueArgs SOURCE_DIR GIT_REPOSITORY GIT_TAG PACKAGE)
+        set(multiValueArgs COMPONENTS)
+        cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+        string(TOUPPER "${DEP_NAME}" DEP_NAME_UPPER)
+        set(_version_var "${DEP_NAME}_VERSION")
+        if(ARGS_GIT_TAG)
+            set(${_version_var} "${ARGS_GIT_TAG}" CACHE STRING "Version or tag for ${DEP_NAME}")
+        elseif(NOT DEFINED ${_version_var})
+            set(${_version_var} "" CACHE STRING "Version or tag for ${DEP_NAME}")
+        endif()
+
+        if(TARGET ${DEP_NAME} OR DEFINED ${DEP_NAME}_SOURCE_DIR OR DEFINED FETCHCONTENT_SOURCE_DIR_${DEP_NAME_UPPER})
+            return()
+        endif()
+
+        if(ARGS_SOURCE_DIR)
+            add_subdirectory(${ARGS_SOURCE_DIR} ${PROJECT_BINARY_DIR}/_deps/${DEP_NAME})
+            return()
+        endif()
+
+        if(ARGS_GIT_REPOSITORY)
+            include(FetchContent)
+            set(_fetch_args GIT_REPOSITORY "${ARGS_GIT_REPOSITORY}")
+            if(NOT "${${_version_var}}" STREQUAL "")
+                list(APPEND _fetch_args GIT_TAG "${${_version_var}}")
+            endif()
+            if(ARGS_GIT_SHALLOW)
+                list(APPEND _fetch_args GIT_SHALLOW TRUE)
+            endif()
+            FetchContent_Declare(${DEP_NAME} ${_fetch_args})
+            FetchContent_MakeAvailable(${DEP_NAME})
+            return()
+        endif()
+
+        if(ARGS_PACKAGE)
+            set(_package_args)
+            if(NOT "${${_version_var}}" STREQUAL "")
+                list(APPEND _package_args "${${_version_var}}")
+            endif()
+            if(ARGS_REQUIRED)
+                list(APPEND _package_args REQUIRED)
+            endif()
+            if(ARGS_COMPONENTS)
+                list(APPEND _package_args COMPONENTS ${ARGS_COMPONENTS})
+            endif()
+            find_package(${ARGS_PACKAGE} ${_package_args})
+            return()
+        endif()
+
+        message(FATAL_ERROR "module_add_dependency(${DEP_NAME}) requires SOURCE_DIR, GIT_REPOSITORY or PACKAGE.")
+    endfunction()
+endif()
+
 option(BUILD_TESTS "Build ${PROJECT_NAME} tests" ON)
 option(ENABLE_COVERAGE "Enable ${PROJECT_NAME} coverage instrumentation" OFF)
 
@@ -32,17 +89,14 @@ if(BUILD_TESTS)
         find_package(GTest QUIET)
     endif()
     if(NOT TARGET GTest::gtest_main)
-        include(FetchContent)
-        FetchContent_Declare(
-            googletest
-            GIT_REPOSITORY https://github.com/google/googletest.git
-            GIT_TAG v1.18.0
-            GIT_SHALLOW TRUE
-        )
         if(MSVC)
             set(gtest_force_shared_crt ON)
         endif()
-        FetchContent_MakeAvailable(googletest)
+        module_add_dependency(googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG v1.18.0
+            GIT_SHALLOW
+        )
     endif()
 
     file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS tests/*.cpp)
