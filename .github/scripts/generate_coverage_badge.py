@@ -3,12 +3,23 @@ import sys
 from pathlib import Path
 
 
+def extract_line_coverage_percent(summary: dict[str, object]) -> float:
+    if "line_percent" in summary:
+        return float(summary["line_percent"])
+
+    lines = summary.get("lines")
+    if isinstance(lines, dict) and "percent" in lines:
+        return float(lines["percent"])
+
+    raise KeyError("Could not find line coverage percent in summary JSON")
+
+
 def main() -> None:
     if len(sys.argv) != 3:
         raise SystemExit("usage: generate_coverage_badge.py SUMMARY_JSON OUTPUT_SVG")
 
     summary = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-    percent = float(summary["lines"]["percent"])
+    percent = extract_line_coverage_percent(summary)
     label = "coverage"
     value = f"{percent:.1f}%"
     label_width = 62
